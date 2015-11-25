@@ -1,0 +1,4 @@
+include ':app', ":gamelib", ':andEngine', ':andEnginePhysicsBox2DExtension'
+project(':gamelib').projectDir = new File(settingsDir, '../GameLib/app')
+project(':andEngine').projectDir = new File(settingsDir, '../GameLib/andEngine')
+project(':andEnginePhysicsBox2DExtension').projectDir = new File(settingsDir, '../GameLib/andEnginePhysicsBox2DExtension')
