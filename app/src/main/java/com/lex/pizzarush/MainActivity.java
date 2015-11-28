@@ -1,7 +1,9 @@
 package com.lex.pizzarush;
 
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
+import com.lex.gamelib.manager.ResourceManager;
+import com.lex.gamelib.manager.SceneManager;
+import com.lex.pizzarush.scenes.SplashScene;
+import com.lex.pizzarush.scenes.TestGameScene;
 
 import org.andengine.engine.camera.Camera;
 import org.andengine.engine.options.EngineOptions;
@@ -9,17 +11,16 @@ import org.andengine.engine.options.ScreenOrientation;
 import org.andengine.engine.options.WakeLockOptions;
 import org.andengine.engine.options.resolutionpolicy.FillResolutionPolicy;
 import org.andengine.entity.scene.Scene;
-import org.andengine.entity.scene.background.Background;
-import org.andengine.ui.IGameInterface;
 import org.andengine.ui.activity.LayoutGameActivity;
+import org.json.JSONException;
 
 import java.io.IOException;
 
 public class MainActivity extends LayoutGameActivity {
 
+    public static final int CAMERA_WIDTH = 480;
+    public static final int CAMERA_HEIGHT = 320;
     private Camera camera;
-    public static final int CAMERA_WIDTH = 320;
-    public static final int CAMERA_HEIGHT = 480;
 
     @Override
     protected int getLayoutID() {
@@ -34,7 +35,7 @@ public class MainActivity extends LayoutGameActivity {
     @Override
     public EngineOptions onCreateEngineOptions() {
         this.camera = new Camera(0,0, CAMERA_WIDTH, CAMERA_HEIGHT);
-        EngineOptions engineOptions = new EngineOptions(true, ScreenOrientation.PORTRAIT_FIXED, new FillResolutionPolicy(), camera);
+        EngineOptions engineOptions = new EngineOptions(true, ScreenOrientation.LANDSCAPE_FIXED, new FillResolutionPolicy(), camera);
         engineOptions.getAudioOptions().setNeedsMusic(true).setNeedsSound(true);
         engineOptions.setWakeLockOptions(WakeLockOptions.SCREEN_ON);
         return engineOptions;
@@ -42,14 +43,39 @@ public class MainActivity extends LayoutGameActivity {
 
     @Override
     public void onCreateResources(OnCreateResourcesCallback pOnCreateResourcesCallback) throws IOException {
+        try {
+            ResourceManager.getInstance().init(this);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         pOnCreateResourcesCallback.onCreateResourcesFinished();
     }
 
     @Override
     public void onCreateScene(OnCreateSceneCallback pOnCreateSceneCallback) throws IOException {
-        Scene testScene = new Scene();
-        testScene.setBackground(new Background(1,1,0));
-        pOnCreateSceneCallback.onCreateSceneFinished(testScene);
+        SplashScene splashScene = new SplashScene();
+        splashScene.setCompletionListener(new SplashScene.SplashLoadCompletionListener() {
+            @Override
+            public void onLoadCompletion() {
+                try {
+                    SceneManager.getInstance().setScene(TestGameScene.class);
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        pOnCreateSceneCallback.onCreateSceneFinished(splashScene);
+        try {
+            if (!ResourceManager.getInstance().isLoaded()) {
+                ResourceManager.getInstance().loadResources(splashScene);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

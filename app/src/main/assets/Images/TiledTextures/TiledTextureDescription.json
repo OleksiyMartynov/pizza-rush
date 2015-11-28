@@ -1,0 +1,32 @@
+[
+  {
+    "imageName": "bug_walk_l.png",
+    "tilesRowCount": 1,
+    "tilesColumnCount": 4,
+    "animationSpeed": 200
+  },
+  {
+    "imageName": "character_walk_l.png",
+    "tilesRowCount": 1,
+    "tilesColumnCount": 4,
+    "animationSpeed": 200
+  },
+  {
+    "imageName": "character_walk_r.png",
+    "tilesRowCount": 1,
+    "tilesColumnCount": 4,
+    "animationSpeed": 200
+  },
+  {
+    "imageName": "smoke.png",
+    "tilesRowCount": 1,
+    "tilesColumnCount": 7,
+    "animationSpeed": 200
+  },
+  {
+    "imageName": "android_loading.png",
+    "tilesRowCount": 1,
+    "tilesColumnCount": 8,
+    "animationSpeed": 200
+  }
+]
