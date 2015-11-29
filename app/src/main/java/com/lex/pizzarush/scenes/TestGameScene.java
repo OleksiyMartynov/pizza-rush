@@ -11,8 +11,8 @@ import com.badlogic.gdx.physics.box2d.ContactListener;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.Manifold;
 import com.lex.gamelib.manager.ResourceManager;
+import com.lex.gamelib.objects.WorldEntity;
 import com.lex.gamelib.scenes.BaseScene;
-import com.lex.pizzarush.objects.WorldEntity;
 
 import org.andengine.engine.handler.IUpdateHandler;
 import org.andengine.entity.scene.background.AutoParallaxBackground;
@@ -25,6 +25,9 @@ import org.andengine.extension.physics.box2d.util.constants.PhysicsConstants;
 import org.andengine.input.touch.TouchEvent;
 import org.andengine.opengl.texture.region.ITextureRegion;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by Oleksiy on 11/28/2015.
  */
@@ -32,10 +35,12 @@ public class TestGameScene extends BaseScene {
 
     private AutoParallaxBackground autoParallaxBackground;
     private WorldEntity player;
+    private List<WorldEntity> entitiesToRemove = new ArrayList<>();
+    private List<WorldEntity> entitiesToAdd = new ArrayList<>();
     @Override
     public void createScene() {
-
-        //world.setContactListener(createContactListener());
+        world.setContactListener(createContactListener());
+        registerUpdateHandler(createUpdateHandler());
 
         float width = camera.getWidth();
         float height = camera.getHeight();
@@ -56,7 +61,7 @@ public class TestGameScene extends BaseScene {
 
         AnimatedSprite characterSprite = ResourceManager.getInstance().getAnimatedSprite("character_walk_r.png");
         characterSprite.setPosition(getCameraWidth() / 4, getCameraHeight() / 2);
-        player = new WorldEntity(this, characterSprite, BodyDef.BodyType.DynamicBody, WorldEntity.BodyShape.rectangle, 0.0f, 0.0f, 0.0f);
+        player = new WorldEntity("player", this, characterSprite, BodyDef.BodyType.DynamicBody, WorldEntity.BodyShape.rectangle, 0.0f, 0.0f, 0.0f);
         player.present();
 
         player.getSprite().registerUpdateHandler(new IUpdateHandler() {
@@ -76,7 +81,7 @@ public class TestGameScene extends BaseScene {
         groundSprite.setAlpha(0);
         groundSprite.setPosition(getCameraWidth() / 2, scaledHeight / 2 - 15);
         groundSprite.setSize(getCameraWidth(), scaledHeight);
-        WorldEntity ground = new WorldEntity(this, groundSprite, BodyDef.BodyType.StaticBody, WorldEntity.BodyShape.rectangle, 0.5f, 0, 1);
+        WorldEntity ground = new WorldEntity("ground", this, groundSprite, BodyDef.BodyType.StaticBody, WorldEntity.BodyShape.rectangle, 0.5f, 0, 1);
         ground.present();
 
 
@@ -89,14 +94,43 @@ public class TestGameScene extends BaseScene {
         }, 500);
     }
 
+    private IUpdateHandler createUpdateHandler() {
+        return new IUpdateHandler() {
+            @Override
+            public void onUpdate(float pSecondsElapsed) {
+                if (entitiesToRemove.size() > 0) {
+                    for (WorldEntity entity : entitiesToRemove) {
+                        entity.destroySelf();
+                    }
+                    entitiesToRemove.clear();
+                }
+                if (entitiesToAdd.size() > 0) {
+                    for (WorldEntity entity : entitiesToAdd) {
+                        entity.present();
+                    }
+                    entitiesToAdd.clear();
+                }
+            }
+
+            @Override
+            public void reset() {
+
+            }
+        };
+    }
+
     private ContactListener createContactListener() {
         return new ContactListener() {
             @Override
             public void beginContact(Contact contact) {
                 final Fixture x1 = contact.getFixtureA();
                 final Fixture x2 = contact.getFixtureB();
-                if (x1.getBody().getUserData() != null && x2.getBody().getUserData() != null) {
-                    //todo: continue from here
+                WorldEntity eX1 = (WorldEntity) x1.getBody().getUserData();
+                WorldEntity eX2 = (WorldEntity) x2.getBody().getUserData();
+                if (eX1.getSprite().getUserData().equals("enemy") && eX2.getSprite().getUserData().equals("ball")) {
+
+                    entitiesToRemove.add(eX1);
+                    entitiesToRemove.add(eX2);
                 }
             }
 
@@ -120,20 +154,26 @@ public class TestGameScene extends BaseScene {
     private void addBall(float x, float y) {
         final Sprite ballSprite = ResourceManager.getInstance().getSprite("cloud_ball.png");
         ballSprite.setPosition(x, y);
-        final WorldEntity ball = new WorldEntity(this, ballSprite, BodyDef.BodyType.DynamicBody, WorldEntity.BodyShape.circle, 0.9f, 0.9f, 0.2f);
+        final WorldEntity ball = new WorldEntity("ball", this, ballSprite, BodyDef.BodyType.DynamicBody, WorldEntity.BodyShape.circle, 0.9f, 0.9f, 0.2f);
         ball.present();
         ball.getBody().setLinearVelocity(5, -5);
-        ball.getBody().setUserData("ball");
     }
 
     private void addEnemy() {
         AnimatedSprite enemySprite = ResourceManager.getInstance().getAnimatedSprite("bug_walk_l.png");
         enemySprite.setPosition(getCameraWidth(), getCameraHeight() / 4);
-        WorldEntity enemy = new WorldEntity(this, enemySprite, BodyDef.BodyType.DynamicBody, WorldEntity.BodyShape.rectangle, 0.0f, 0.6f, 0.0f);
+        WorldEntity enemy = new WorldEntity("enemy", this, enemySprite, BodyDef.BodyType.DynamicBody, WorldEntity.BodyShape.rectangle, 0.0f, 0.6f, 0.0f);
         enemy.present();
         enemy.getBody().setLinearVelocity(-2, (float) Math.random() * 10);
-        enemy.getBody().setUserData("enemy");
     }
+
+    private WorldEntity initSmoke(float x, float y) {
+        AnimatedSprite smokeSprite = ResourceManager.getInstance().getAnimatedSprite("smoke.png");
+        smokeSprite.setPosition(x, y);
+        WorldEntity smoke = new WorldEntity("smoke", this, smokeSprite, BodyDef.BodyType.StaticBody, WorldEntity.BodyShape.rectangle, 0.0f, 0.6f, 0.0f);
+        return smoke;
+    }
+
     @Override
     public boolean onSceneTouchEvent(TouchEvent pSceneTouchEvent) {
         if (world != null && pSceneTouchEvent.isActionDown()) {
@@ -141,7 +181,7 @@ public class TestGameScene extends BaseScene {
                 player.getBody().setLinearVelocity(0, 8.5f);
             } else { //right half
                 Vector2 posi = Vector2Pool.obtain(player.getSprite().getX(), player.getSprite().getY());
-                addBall(posi.x + player.getSprite().getWidth() / 2, posi.y + player.getSprite().getHeight() / 2);
+                addBall(15 + posi.x + player.getSprite().getWidth() / 2, posi.y + player.getSprite().getHeight() / 2);
             }
             return true;
         }
@@ -164,11 +204,4 @@ public class TestGameScene extends BaseScene {
 
     }
 
-    private class SpawnRunnable implements Runnable {
-
-        @Override
-        public void run() {
-            addEnemy();
-        }
-    }
 }
