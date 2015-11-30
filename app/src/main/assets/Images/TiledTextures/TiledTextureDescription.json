@@ -20,8 +20,8 @@
   {
     "imageName": "smoke.png",
     "tilesRowCount": 1,
-    "tilesColumnCount": 7,
-    "animationSpeed": 200
+    "tilesColumnCount": 8,
+    "animationSpeed": 100
   },
   {
     "imageName": "android_loading.png",
