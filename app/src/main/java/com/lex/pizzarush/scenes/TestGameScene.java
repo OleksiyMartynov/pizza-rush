@@ -188,6 +188,14 @@ public class TestGameScene extends BaseScene {
                 .setPosition(x + 50, y)
                 .build();
 
+        WorldEntity ball3 = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "ball")
+                .setBodyShape(WorldEntity.BodyShape.circle)
+                .setDensity(1)
+                .setElasticity(0.4f)
+                .setFriction(0.5f)
+                .setPosition(x + 100, y)
+                .build();
+
         float anchorFaceX = ball2.getSprite().getX();
         float anchorFaceY = ball2.getSprite().getY();
         float spriteWidth = ball2.getSprite().getWidth();
@@ -196,10 +204,13 @@ public class TestGameScene extends BaseScene {
         Line line = new Line(anchorFaceX + spriteWidth / 2, anchorFaceY + spriteHeight / 2, anchorFaceX + spriteWidth / 2, anchorFaceY + spriteHeight / 2, vertexBufferObjectManager);
         line.setLineWidth(2);
         line.setColor(1, 1, 0);
-        WorldJoint joint = new WorldJoint(this, world, ball, ball2, line);
+        WorldJoint joint = new WorldJoint(this, world, ball, ball2, "background_back.png");
+        WorldJoint joint2 = new WorldJoint(this, world, ball2, ball3, line);
         ball.present();
         ball2.present();
+        ball3.present();
         joint.present();
+        joint2.present();
     }
 
     @Override
