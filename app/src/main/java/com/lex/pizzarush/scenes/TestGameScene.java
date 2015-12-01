@@ -8,9 +8,11 @@ import com.badlogic.gdx.physics.box2d.ContactListener;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.Manifold;
 import com.lex.gamelib.objects.WorldEntity;
+import com.lex.gamelib.objects.WorldJoint;
 import com.lex.gamelib.scenes.BaseScene;
 
 import org.andengine.engine.handler.IUpdateHandler;
+import org.andengine.entity.primitive.Line;
 import org.andengine.entity.scene.background.AutoParallaxBackground;
 import org.andengine.entity.scene.background.Background;
 import org.andengine.entity.scene.background.ParallaxBackground;
@@ -68,11 +70,14 @@ public class TestGameScene extends BaseScene {
         ground.getSprite().setAlpha(0);
         ground.present();
 
+        //join test
+        addJointTest(getCameraWidth() / 2, getCameraHeight() / 2);
+
 
         //handlers & listeners
         world.setContactListener(createContactListener());
         player.getSprite().registerUpdateHandler(getPlayerXPosCorrectionHandler());
-        registerUpdateHandler(getEnemySpawnUpdateHandler());
+        //registerUpdateHandler(getEnemySpawnUpdateHandler());
     }
 
 
@@ -127,9 +132,9 @@ public class TestGameScene extends BaseScene {
     private void addBall(float x, float y) {
         WorldEntity ball = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "ball")
                 .setBodyShape(WorldEntity.BodyShape.circle)
-                .setDensity(0.5f)
+                .setDensity(1)
                 .setElasticity(0.5f)
-                .setFriction(1.0f)
+                .setFriction(0.5f)
                 .setPosition(x, y)
                 .setDestroyWhenOffscreen(true)
                 .build();
@@ -139,7 +144,9 @@ public class TestGameScene extends BaseScene {
 
     private void addEnemy() {
         WorldEntity enemy = new WorldEntity.WorldEntityBuilder("bug_walk_l.png", this, BodyDef.BodyType.DynamicBody, "enemy")
-                .setElasticity(0.6f)
+                .setDensity(0.5f)
+                .setFriction(0.03f)
+                .setElasticity(0.5f)
                 .setPosition(getCameraWidth(), getCameraHeight() / 4)
                 .setDestroyWhenOffscreen(true)
                 .build();
@@ -161,6 +168,38 @@ public class TestGameScene extends BaseScene {
                 }
             }
         });
+    }
+
+    private void addJointTest(float x, float y) {
+        WorldEntity ball = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "ball")
+                .setBodyShape(WorldEntity.BodyShape.circle)
+                .setDensity(1)
+                .setElasticity(0.3f)
+                .setFriction(0.5f)
+                .setPosition(x, y)
+                .build();
+
+
+        WorldEntity ball2 = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "ball")
+                .setBodyShape(WorldEntity.BodyShape.circle)
+                .setDensity(1)
+                .setElasticity(0.7f)
+                .setFriction(0.5f)
+                .setPosition(x + 50, y)
+                .build();
+
+        float anchorFaceX = ball2.getSprite().getX();
+        float anchorFaceY = ball2.getSprite().getY();
+        float spriteWidth = ball2.getSprite().getWidth();
+        float spriteHeight = ball2.getSprite().getHeight();
+
+        Line line = new Line(anchorFaceX + spriteWidth / 2, anchorFaceY + spriteHeight / 2, anchorFaceX + spriteWidth / 2, anchorFaceY + spriteHeight / 2, vertexBufferObjectManager);
+        line.setLineWidth(2);
+        line.setColor(1, 1, 0);
+        WorldJoint joint = new WorldJoint(this, world, ball, ball2, line);
+        ball.present();
+        ball2.present();
+        joint.present();
     }
 
     @Override
