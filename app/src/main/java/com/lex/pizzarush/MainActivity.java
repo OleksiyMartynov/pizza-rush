@@ -5,6 +5,7 @@ import com.lex.gamelib.manager.SceneManager;
 import com.lex.pizzarush.scenes.SplashScene;
 import com.lex.pizzarush.scenes.TestGameScene;
 
+import org.andengine.engine.camera.BoundCamera;
 import org.andengine.engine.camera.Camera;
 import org.andengine.engine.options.EngineOptions;
 import org.andengine.engine.options.ScreenOrientation;
@@ -34,7 +35,7 @@ public class MainActivity extends LayoutGameActivity {
 
     @Override
     public EngineOptions onCreateEngineOptions() {
-        this.camera = new Camera(0,0, CAMERA_WIDTH, CAMERA_HEIGHT);
+        this.camera = new BoundCamera(0, 0, CAMERA_WIDTH, CAMERA_HEIGHT); //new Camera(0,0, CAMERA_WIDTH, CAMERA_HEIGHT);
         EngineOptions engineOptions = new EngineOptions(true, ScreenOrientation.LANDSCAPE_FIXED, new FillResolutionPolicy(), camera);
         engineOptions.getAudioOptions().setNeedsMusic(true).setNeedsSound(true);
         engineOptions.setWakeLockOptions(WakeLockOptions.SCREEN_ON);
