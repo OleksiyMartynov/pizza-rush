@@ -7,18 +7,18 @@ import com.badlogic.gdx.physics.box2d.ContactListener;
 import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.Manifold;
+import com.badlogic.gdx.physics.box2d.joints.DistanceJointDef;
 import com.lex.gamelib.objects.WorldEntity;
 import com.lex.gamelib.objects.WorldJoint;
 import com.lex.gamelib.scenes.BaseScene;
 
-import org.andengine.engine.camera.BoundCamera;
 import org.andengine.engine.handler.IUpdateHandler;
-import org.andengine.entity.primitive.Line;
 import org.andengine.entity.primitive.Rectangle;
 import org.andengine.entity.scene.background.AutoParallaxBackground;
 import org.andengine.entity.scene.background.Background;
 import org.andengine.entity.scene.background.ParallaxBackground;
 import org.andengine.entity.sprite.Sprite;
+import org.andengine.extension.physics.box2d.PhysicsConnector;
 import org.andengine.extension.physics.box2d.PhysicsFactory;
 import org.andengine.extension.physics.box2d.util.Vector2Pool;
 import org.andengine.extension.physics.box2d.util.constants.PhysicsConstants;
@@ -32,19 +32,16 @@ import org.andengine.opengl.texture.region.ITextureRegion;
 public class TestGameScene extends BaseScene {
 
     private AutoParallaxBackground autoParallaxBackground;
-    private WorldEntity player;
     private long nextEnemySpawnTime;
     private boolean canJump = true;
 
-    private WorldEntity wheel, head, ballHandR, ballHandL;
+    private WorldEntity wheel, head, ballHandR, ballHandL, ballKneeL, ballKneeR;
 
 
     private boolean leftSidePressed, rightSidePressed;
 
-
     @Override
     public void createScene() {
-
 
         setBackground(new Background(0.9f, 0.9f, 0.9f));
         wheel = new WorldEntity.WorldEntityBuilder("wheel.png", this, BodyDef.BodyType.DynamicBody, "wheel")
@@ -75,9 +72,9 @@ public class TestGameScene extends BaseScene {
                 .build();
 
 
-        WorldEntity ballKneeR = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "knee_r")
+        ballKneeR = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "knee_r")
                 .setBodyShape(WorldEntity.BodyShape.rectangle)
-                .setPosition(getCameraWidth() / 2 + 32, 100)
+                .setPosition(getCameraWidth() / 2 + 50, 90)
                 .setDisableCollision(true)
                 .build();
         ballKneeR.getSprite().setScale(0.5f);
@@ -85,14 +82,14 @@ public class TestGameScene extends BaseScene {
 
         WorldEntity ballFootR = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "knee_r")
                 .setBodyShape(WorldEntity.BodyShape.rectangle)
-                .setPosition(getCameraWidth() / 2 + 32, 132)
+                .setPosition(wheel.getSprite().getX() + wheel.getSprite().getWidth() / 2 - (0.25f * PhysicsConstants.PIXEL_TO_METER_RATIO_DEFAULT), wheel.getSprite().getY())
                 .setDisableCollision(true)
                 .build();
         ballFootR.getSprite().setScale(0.5f);
 
-        WorldEntity ballKneeL = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "knee_l")
+        ballKneeL = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "knee_l")
                 .setBodyShape(WorldEntity.BodyShape.rectangle)
-                .setPosition(getCameraWidth() / 2 - 32, 100)
+                .setPosition(getCameraWidth() / 2 - 50, 90)
                 .setDisableCollision(true)
                 .build();
         ballKneeL.getSprite().setScale(0.5f);
@@ -100,7 +97,7 @@ public class TestGameScene extends BaseScene {
 
         WorldEntity ballFootL = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "knee_l")
                 .setBodyShape(WorldEntity.BodyShape.rectangle)
-                .setPosition(getCameraWidth() / 2 - 32, 132)
+                .setPosition(wheel.getSprite().getX() - wheel.getSprite().getWidth() / 2 + (0.25f * PhysicsConstants.PIXEL_TO_METER_RATIO_DEFAULT), wheel.getSprite().getY())
                 .setDisableCollision(true)
                 .build();
         ballFootL.getSprite().setScale(0.5f);
@@ -122,33 +119,40 @@ public class TestGameScene extends BaseScene {
         ballHandR = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "hand_r")
                 .setBodyShape(WorldEntity.BodyShape.rectangle)
                 .setPosition(getCameraWidth() / 2 + 35, 112)
-                .setDisableCollision(true)
                 .build();
         ballHandR.getSprite().setScale(0.5f);
 
         ballHandL = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "hand_l")
                 .setBodyShape(WorldEntity.BodyShape.rectangle)
                 .setPosition(getCameraWidth() / 2 - 35, 112)
-                .setDisableCollision(true)
                 .build();
         ballHandL.getSprite().setScale(0.5f);
 
 
-        WorldJoint seat = new WorldJoint(this, world, wheel, butt, "post.png", 0);
-        WorldJoint torso = new WorldJoint(this, world, head, butt, "torso.png", 0);
+        WorldJoint seat = new WorldJoint(this, world, wheel, butt, "post.png", 0, true, true);
+        WorldJoint torso = new WorldJoint(this, world, head, butt, "torso.png", 0, false, false);
 
-        WorldJoint thighR = new WorldJoint(this, world, butt, ballKneeR, "thigh.png", 0);
-        WorldJoint calfR = new WorldJoint(this, world, ballKneeR, ballFootR, "calf.png", 0);
+        WorldJoint thighR = new WorldJoint(this, world, butt, ballKneeR, "thigh.png", 0, false, false);
+        WorldJoint calfR = new WorldJoint(this, world, ballKneeR, ballFootR, "calf.png", 0, false, false);
 
-        WorldJoint thighL = new WorldJoint(this, world, butt, ballKneeL, "thigh.png", 0);
-        WorldJoint calfL = new WorldJoint(this, world, ballKneeL, ballFootL, "calf.png", 0);
+        WorldJoint thighL = new WorldJoint(this, world, butt, ballKneeL, "thigh.png", 0, false, false);
+        WorldJoint calfL = new WorldJoint(this, world, ballKneeL, ballFootL, "calf.png", 0, false, false);
 
-        WorldJoint armR = new WorldJoint(this, world, head, ballElbowR, "arm.png", 0);
-        WorldJoint armL = new WorldJoint(this, world, head, ballElbowL, "arm.png", 0);
+        WorldJoint armR = new WorldJoint(this, world, head, ballElbowR, "arm.png", 0, true, true);
+        WorldJoint armL = new WorldJoint(this, world, head, ballElbowL, "arm.png", 0, true, true);
 
-        WorldJoint foreArmR = new WorldJoint(this, world, ballElbowR, ballHandR, "forearm.png", 0);
-        WorldJoint foreArmL = new WorldJoint(this, world, ballElbowL, ballHandL, "forearm.png", 0);
+        WorldJoint foreArmR = new WorldJoint(this, world, ballElbowR, ballHandR, "forearm.png", 0, true, true);
+        WorldJoint foreArmL = new WorldJoint(this, world, ballElbowL, ballHandL, "forearm.png", 0, true, true);
 
+        DistanceJointDef pedalR = new DistanceJointDef();
+        pedalR.initialize(wheel.getBody(), ballFootR.getBody(), wheel.getBody().getWorldCenter().add(0.75f, 0), ballFootR.getBody().getWorldCenter());
+        world.registerPhysicsConnector(new PhysicsConnector(wheel.getSprite(), wheel.getBody(), true, false));
+        world.createJoint(pedalR);
+
+        DistanceJointDef pedalL = new DistanceJointDef();
+        pedalL.initialize(wheel.getBody(), ballFootL.getBody(), wheel.getBody().getWorldCenter().add(-0.75f, 0), ballFootL.getBody().getWorldCenter());
+        world.registerPhysicsConnector(new PhysicsConnector(wheel.getSprite(), wheel.getBody(), true, false));
+        world.createJoint(pedalL);
 
         //left leg
         thighL.present();
@@ -185,15 +189,22 @@ public class TestGameScene extends BaseScene {
         createWorldBox();
 
         registerUpdateHandler(createControlsUpdater());
+
+        camera.setChaseEntity(head.getSprite());
+        camera.setZoomFactor(0.5f);
+        world.setGravity(Vector2Pool.obtain(0, 0));
     }
 
     private IUpdateHandler createControlsUpdater() {
         return new IUpdateHandler() {
             @Override
             public void onUpdate(float pSecondsElapsed) {
-                head.getBody().applyForce(Vector2Pool.obtain(0, 50), head.getBody().getWorldCenter());
-                ballHandL.getBody().applyForce(Vector2Pool.obtain(-18, 25), head.getBody().getWorldCenter());
-                ballHandR.getBody().applyForce(Vector2Pool.obtain(18, 25), head.getBody().getWorldCenter());
+                //head.getBody().applyForce(Vector2Pool.obtain(0, 50), head.getBody().getWorldCenter());
+//                ballHandL.getBody().applyForce(Vector2Pool.obtain(-18, 25), ballHandL.getBody().getWorldCenter());
+//                ballHandR.getBody().applyForce(Vector2Pool.obtain( 18, 25), ballHandR.getBody().getWorldCenter());
+//                ballKneeL.getBody().applyForce(Vector2Pool.obtain(-20, 20), ballKneeL.getBody().getWorldCenter());
+//                ballKneeR.getBody().applyForce(Vector2Pool.obtain( 20, 20), ballKneeR.getBody().getWorldCenter());
+                //wheel.getBody().applyForce(Vector2Pool.obtain(0,-200),wheel.getBody().getWorldCenter());
                 if (leftSidePressed) {
                     wheel.getBody().applyTorque(50);
                 } else if (rightSidePressed) {
@@ -242,37 +253,6 @@ public class TestGameScene extends BaseScene {
         autoParallaxBackground.attachParallaxEntity(pFront);
         setBackground(autoParallaxBackground);
 
-        //player
-        player = new WorldEntity.WorldEntityBuilder("character_walk_r.png", this, BodyDef.BodyType.DynamicBody, "player")
-                .setBodyShape(WorldEntity.BodyShape.rectangle)
-                .setUpdateRotation(false)
-                .setPosition(getCameraWidth() / 4, getCameraHeight() / 2)
-                .build();
-        player.present();
-
-        //ground
-        WorldEntity ground = new WorldEntity.WorldEntityBuilder("background_front.png", this, BodyDef.BodyType.StaticBody, "ground")
-                .setBodyShape(WorldEntity.BodyShape.rectangle)
-                .setPosition(getCameraWidth() / 2, scaledHeight / 2 - 40)
-                .setFriction(0.1f)
-                .build();
-        ground.getSprite().setSize(getCameraWidth(), scaledHeight);
-        ground.getSprite().setAlpha(0);
-        ground.present();
-
-        //join test
-        addJointTest(getCameraWidth() / 2, getCameraHeight() / 2);
-
-        //bound camera test
-        BoundCamera bc = (BoundCamera) camera;
-        //bc.setChaseEntity(player.getSprite());
-
-        //physics loader test
-
-        //handlers & listeners
-        world.setContactListener(createTestContactListener());
-        player.getSprite().registerUpdateHandler(getPlayerXPosCorrectionHandler());
-        //registerUpdateHandler(getEnemySpawnUpdateHandler());
     }
 
     private ContactListener createTestContactListener() {
@@ -321,18 +301,7 @@ public class TestGameScene extends BaseScene {
         };
     }
 
-    private void addBall(float x, float y) {
-        WorldEntity ball = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "ball")
-                .setBodyShape(WorldEntity.BodyShape.circle)
-                .setDensity(1)
-                .setElasticity(0.5f)
-                .setFriction(0.5f)
-                .setPosition(x, y)
-                .setDestroyWhenOffscreen(true)
-                .build();
-        ball.present();
-        ball.getBody().setLinearVelocity(5, -5);
-    }
+
 
     private void addEnemy() {
         WorldEntity enemy = new WorldEntity.WorldEntityBuilder("bug_walk_l.png", this, BodyDef.BodyType.DynamicBody, "enemy")
@@ -362,53 +331,12 @@ public class TestGameScene extends BaseScene {
         });
     }
 
-    private void addJointTest(float x, float y) {
-        WorldEntity ball = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "ball")
-                .setBodyShape(WorldEntity.BodyShape.circle)
-                .setDensity(1)
-                .setElasticity(0.3f)
-                .setFriction(0.5f)
-                .setPosition(x, y)
-                .build();
 
-
-        WorldEntity ball2 = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "ball")
-                .setBodyShape(WorldEntity.BodyShape.circle)
-                .setDensity(1)
-                .setElasticity(0.7f)
-                .setFriction(0.5f)
-                .setPosition(x + 50, y)
-                .build();
-
-        WorldEntity ball3 = new WorldEntity.WorldEntityBuilder("cloud_ball.png", this, BodyDef.BodyType.DynamicBody, "ball")
-                .setBodyShape(WorldEntity.BodyShape.circle)
-                .setDensity(1)
-                .setElasticity(0.4f)
-                .setFriction(0.5f)
-                .setPosition(x + 100, y)
-                .build();
-
-        float anchorFaceX = ball2.getSprite().getX();
-        float anchorFaceY = ball2.getSprite().getY();
-        float spriteWidth = ball2.getSprite().getWidth();
-        float spriteHeight = ball2.getSprite().getHeight();
-
-        Line line = new Line(anchorFaceX + spriteWidth / 2, anchorFaceY + spriteHeight / 2, anchorFaceX + spriteWidth / 2, anchorFaceY + spriteHeight / 2, vertexBufferObjectManager);
-        line.setLineWidth(2);
-        line.setColor(1, 1, 0);
-        WorldJoint joint = new WorldJoint(this, world, ball, ball2, "background_back.png", 0);
-        WorldJoint joint2 = new WorldJoint(this, world, ball2, ball3, line);
-        ball.present();
-        ball2.present();
-        ball3.present();
-        joint.present();
-        joint2.present();
-    }
 
     @Override
     public boolean onSceneTouchEvent(TouchEvent pSceneTouchEvent) {
         if (world != null && pSceneTouchEvent.isActionDown()) {
-            if (pSceneTouchEvent.getX() < getCameraWidth() / 2) {//left half
+            if (pSceneTouchEvent.getX() < wheel.getSprite().getX()) {//(pSceneTouchEvent.getX() < getCameraWidth() / 2) {//left half
                 leftSidePressed = true;
                 if (canJump) {
 //                    player.getBody().setLinearVelocity(0, 8.5f);
@@ -445,36 +373,4 @@ public class TestGameScene extends BaseScene {
 
     }
 
-
-    public IUpdateHandler getEnemySpawnUpdateHandler() {
-        return new IUpdateHandler() {
-            @Override
-            public void onUpdate(float pSecondsElapsed) {
-                long t = System.currentTimeMillis();
-                if (nextEnemySpawnTime < t) {
-                    addEnemy();
-                    nextEnemySpawnTime = t + (long) (Math.random() * 5000.0d);
-                }
-            }
-
-            @Override
-            public void reset() {
-
-            }
-        };
-    }
-
-    public IUpdateHandler getPlayerXPosCorrectionHandler() {
-        return new IUpdateHandler() {
-            @Override
-            public void onUpdate(float pSecondsElapsed) {
-                player.getBody().setTransform(Vector2Pool.obtain(getCameraWidth() / 4 / PhysicsConstants.PIXEL_TO_METER_RATIO_DEFAULT, player.getBody().getPosition().y), player.getBody().getAngle());
-            }
-
-            @Override
-            public void reset() {
-
-            }
-        };
-    }
 }
